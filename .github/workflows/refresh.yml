@@ -18,7 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Check runtime
-        run: php -r 'exit(extension_loaded("sodium") && extension_loaded("curl") ? 0 : 1);'
+        run: |
+          php -r 'exit(extension_loaded("sodium") && extension_loaded("curl") ? 0 : 1);'
       - name: Fetch official HTTPS list and sign
         env:
           ATTESTATION_SIGNING_KEY: ${{ secrets.ATTESTATION_SIGNING_KEY }}
