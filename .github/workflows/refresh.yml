@@ -2,7 +2,7 @@ name: Refresh public Android attestation status
 on:
   workflow_dispatch:
   schedule:
-    - cron: '23 */6 * * *'
+    - cron: '13 4,10,16,22 * * *'
 permissions:
   contents: read
 concurrency:
