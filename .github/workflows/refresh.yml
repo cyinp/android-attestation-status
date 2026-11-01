@@ -1,8 +1,14 @@
 name: Refresh public Android attestation status
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refresh.yml'
+      - 'publish.php'
+      - 'lib/**'
   schedule:
-    - cron: '13 4,10,16,22 * * *'
+    - cron: '13 * * * *'
 permissions:
   contents: read
 concurrency:
@@ -23,7 +29,13 @@ jobs:
       - name: Fetch official HTTPS list and sign
         env:
           ATTESTATION_SIGNING_KEY: ${{ secrets.ATTESTATION_SIGNING_KEY }}
-        run: php publish.php
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if php publish.php; then exit 0; fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep "$((attempt * 5))"
+          done
       - name: Commit public snapshot
         run: |
           git config user.name 'github-actions[bot]'
