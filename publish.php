@@ -7,7 +7,7 @@ try {
     S::need($secret !== false && strlen($secret) === SODIUM_CRYPTO_SIGN_SECRETKEYBYTES, 'missing_signing_key');
     $r=S::download(S::OFFICIAL_URL);
     $state=S::fromOfficial($r['body'],$r['headers'],$r['received_at']);
-    // Do not publish a snapshot about to expire before the consumer's next hourly poll.
+    // Hourly publishing and 15-minute server polling still need a two-hour buffer.
     S::need($state['expires_at']-time()>=7200,'source_lifetime_too_short');
     if (is_file(__DIR__.'/status.json')) {
         $prior=json_decode((string)file_get_contents(__DIR__.'/status.json'),true);
@@ -26,5 +26,8 @@ try {
     S::need(file_put_contents(__DIR__.'/status.json',$json)===strlen($json),'publish_write_failed');
     echo json_encode(['ok'=>true,'entries'=>count(get_object_vars($state['entries'])),'expires_at'=>$state['expires_at']]).PHP_EOL;
 } catch (Throwable $e) {
-    fwrite(STDERR,"Public status refresh failed; previous signed snapshot retained.\n");exit(1);
+    $reason = $e instanceof DomainException && preg_match('/^[a-z_]{1,80}$/D', $e->getMessage())
+        ? $e->getMessage() : 'publish_failed';
+    fwrite(STDERR,json_encode(['ok'=>false,'reason'=>$reason,'previous_snapshot_retained'=>true]).PHP_EOL);
+    exit(1);
 }
